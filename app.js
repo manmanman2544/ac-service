@@ -1,33 +1,83 @@
 'use strict';
 
 /* ============================================================
-   PRICING DATA
+   PRICING DATA (loaded from Google Sheets at runtime)
 ============================================================ */
-const PRICING = {
-  'ล้างแอร์': {
-    '9000':  600,
-    '12000': 700,
-    '18000': 900,
-    '24000': 1100,
-    '36000': 1400,
-  },
-  'ซ่อมแอร์': {
-    '9000':  800,
-    '12000': 900,
-    '18000': 1100,
-    '24000': 1400,
-    '36000': 1800,
-  },
-  'ติดตั้งแอร์': {
-    '9000':  1500,
-    '12000': 1800,
-    '18000': 2500,
-    '24000': 3200,
-    '36000': 4500,
-  },
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRFS-_c49skub3aMVFbUMZK01foWxbm73L28Rg77FKZcB0CPaJpRdVKF9Sm4hRNRMXTgvfA5-9OoWIx/pub?output=csv';
+
+// Maps CSV service keys → Thai display names (order determines dropdown order)
+const SERVICE_KEY_MAP = {
+  'wash':    'ล้างแอร์',
+  'repair':  'ซ่อมแอร์',
+  'install': 'ติดตั้งแอร์',
 };
 
-const SERVICE_TYPES = Object.keys(PRICING);
+// Will be populated after CSV fetch
+let PRICING = {};
+let SERVICE_TYPES = [];
+
+function parsePricingCSV(csvText) {
+  const lines = csvText.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) throw new Error('CSV มีข้อมูลไม่ครบ');
+
+  const headers = lines[0].split(',').map(h => h.trim());
+  // headers[0] = "บริการ/BTU", headers[1..] = BTU values e.g. "9000","12000",...
+  const btuCols = headers.slice(1);
+
+  const result = {};
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim());
+    const rawKey = cols[0].toLowerCase();
+    const thaiName = SERVICE_KEY_MAP[rawKey];
+    if (!thaiName) continue;
+
+    result[thaiName] = {};
+    btuCols.forEach((btu, idx) => {
+      const price = parseInt(cols[idx + 1], 10);
+      if (!isNaN(price)) result[thaiName][btu] = price;
+    });
+  }
+  return result;
+}
+
+async function loadPricing() {
+  showPricingStatus('loading');
+  try {
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const csv = await res.text();
+    PRICING = parsePricingCSV(csv);
+    SERVICE_TYPES = Object.keys(PRICING);
+    showPricingStatus('ok');
+  } catch (err) {
+    console.error('โหลดราคาไม่สำเร็จ:', err);
+    showPricingStatus('error');
+  }
+}
+
+function showPricingStatus(state) {
+  const el = document.getElementById('pricing-status');
+  if (!el) return;
+  if (state === 'loading') {
+    el.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs" style="color:#888780;">
+      <svg class="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      กำลังโหลดอัตราค่าบริการ...
+    </span>`;
+    el.style.display = 'flex';
+  } else if (state === 'ok') {
+    el.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs" style="color:#10B981;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      อัตราค่าบริการล่าสุด (อัปเดตจาก Google Sheets)
+    </span>`;
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+  } else {
+    el.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs" style="color:#EF4444;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      โหลดอัตราค่าบริการไม่สำเร็จ กรุณารีเฟรชหน้า
+    </span>`;
+    el.style.display = 'flex';
+  }
+}
 
 const BTU_OPTIONS = [
   { value: '9000',  label: '9,000 BTU' },
@@ -584,8 +634,11 @@ function initEventListeners() {
 /* ============================================================
    INIT
 ============================================================ */
-function init() {
+async function init() {
   initHeaderDate();
+
+  // Load pricing from Google Sheets before rendering the form
+  await loadPricing();
 
   // Start with one service item
   serviceItems = [createServiceItem()];
