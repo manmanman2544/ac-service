@@ -111,39 +111,64 @@ function buildServiceItemHTML(item, index, total) {
   const showRemove = total > 1;
 
   return `
-    <div class="service-item" id="item-${item.id}">
-      <span class="service-item-num">รายการที่ ${index + 1}</span>
-
-      <div class="form-group">
-        <label class="form-label">ประเภทบริการ</label>
-        <select class="form-control" data-id="${item.id}" data-field="type">
-          ${typeOptions}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">ขนาดแอร์</label>
-        <select class="form-control" data-id="${item.id}" data-field="btu">
-          ${btuOptions}
-        </select>
-      </div>
-
-      <div class="qty-wrapper form-group">
-        <label class="form-label">จำนวน</label>
-        <input type="number" class="form-control" value="${item.qty}" min="1" max="99"
-          data-id="${item.id}" data-field="qty" style="text-align:center;" />
-      </div>
-
-      ${showRemove ? `
-      <button type="button" class="btn btn-danger-ghost" data-id="${item.id}" data-action="remove" title="ลบรายการ">
-        🗑️
-      </button>` : `<div></div>`}
-    </div>
-
-    <div style="text-align:right;margin-top:-6px;padding-right:4px;">
-      <span class="price-hint" id="hint-${item.id}">
-        💰 ราคา: ${formatNumber(price)} บาท/เครื่อง
+    <div class="rounded-xl border p-4 pt-5 relative" id="item-${item.id}" style="background:rgb(249,249,247);border-color:rgba(0,0,0,0.12);">
+      <span class="absolute -top-2.5 left-4 text-xs font-semibold px-2 py-0.5 rounded-full text-white" style="background:#1A1A1A;letter-spacing:0.03em;">
+        รายการที่ ${index + 1}
       </span>
+
+      <div class="grid gap-3" style="grid-template-columns:1fr 1fr 80px${showRemove ? ' 40px' : ''}; align-items:end;">
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium" style="color:#888780;">ประเภทบริการ</label>
+          <div class="relative">
+            <select class="form-field pr-8" data-id="${item.id}" data-field="type">
+              ${typeOptions}
+            </select>
+            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" style="color:#888780;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium" style="color:#888780;">ขนาดแอร์</label>
+          <div class="relative">
+            <select class="form-field pr-8" data-id="${item.id}" data-field="btu">
+              ${btuOptions}
+            </select>
+            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" style="color:#888780;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium" style="color:#888780;">จำนวน</label>
+          <input type="number" class="form-field text-center" value="${item.qty}" min="1" max="99"
+            data-id="${item.id}" data-field="qty" />
+        </div>
+
+        ${showRemove ? `
+        <div class="flex items-end pb-0.5">
+          <button type="button"
+            class="w-9 h-9 flex items-center justify-center rounded-lg border transition-colors"
+            data-id="${item.id}" data-action="remove" title="ลบรายการ"
+            style="border-color:rgba(239,68,68,0.3);color:#EF4444;background:transparent;"
+            onmouseover="this.style.background='rgba(239,68,68,0.08)'" onmouseout="this.style.background='transparent'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>` : ''}
+
+      </div>
+
+      <div class="mt-2.5 flex justify-end">
+        <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md" style="background:#F1EFE8;color:#1A1A1A;" id="hint-${item.id}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          ราคา: ${formatNumber(price)} บาท/เครื่อง
+        </span>
+      </div>
     </div>
   `;
 }
@@ -194,7 +219,10 @@ function handleItemFieldChange(e) {
   const hint = document.getElementById(`hint-${id}`);
   if (hint) {
     const price = getItemPrice(item.type, item.btu);
-    hint.textContent = `💰 ราคา: ${formatNumber(price)} บาท/เครื่อง`;
+    hint.innerHTML = `
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      ราคา: ${formatNumber(price)} บาท/เครื่อง
+    `;
   }
 }
 
@@ -206,11 +234,11 @@ function showFieldError(fieldId, errorId, show) {
   const error = document.getElementById(errorId);
   if (!field || !error) return;
   if (show) {
-    field.classList.add('error');
-    error.classList.add('visible');
+    field.classList.add('field-error');
+    error.style.display = 'block';
   } else {
-    field.classList.remove('error');
-    error.classList.remove('visible');
+    field.classList.remove('field-error');
+    error.style.display = 'none';
   }
 }
 
@@ -303,7 +331,7 @@ function getBtuLabel(btu) {
 function calculateAndShowModal() {
   if (!validateForm()) {
     // Scroll to first error
-    const firstError = document.querySelector('.form-control.error');
+    const firstError = document.querySelector('.field-error');
     if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
@@ -358,23 +386,23 @@ function populateModal(b) {
   // Table rows
   const tbody = document.getElementById('res-table-body');
   let rows = '';
-  b.items.forEach((item, i) => {
+  b.items.forEach((item) => {
     rows += `
-      <tr>
-        <td>${item.type}</td>
-        <td>${getBtuLabel(item.btu)}</td>
-        <td style="text-align:center;">${item.qty}</td>
-        <td style="text-align:right;">${formatNumber(item.unitPrice)}</td>
-        <td>${formatNumber(item.subtotal)}</td>
+      <tr class="border-b" style="border-color:rgba(0,0,0,0.08);">
+        <td class="px-3 py-2.5 text-sm" style="color:#1A1A1A;">${item.type}</td>
+        <td class="px-3 py-2.5 text-sm" style="color:#1A1A1A;">${getBtuLabel(item.btu)}</td>
+        <td class="px-3 py-2.5 text-sm text-center" style="color:#1A1A1A;">${item.qty}</td>
+        <td class="px-3 py-2.5 text-sm text-right" style="color:#1A1A1A;">${formatNumber(item.unitPrice)}</td>
+        <td class="px-3 py-2.5 text-sm text-right font-semibold" style="color:#1A1A1A;">${formatNumber(item.subtotal)}</td>
       </tr>
     `;
   });
 
   // Distance row
   rows += `
-    <tr class="distance-row">
-      <td colspan="4">ค่าเดินทาง (${b.distanceLabel})</td>
-      <td>${formatNumber(b.distance)}</td>
+    <tr>
+      <td colspan="4" class="px-3 py-2.5 text-sm" style="color:#888780;">ค่าเดินทาง (${b.distanceLabel})</td>
+      <td class="px-3 py-2.5 text-sm text-right font-medium" style="color:#888780;">${formatNumber(b.distance)}</td>
     </tr>
   `;
 
@@ -403,8 +431,8 @@ function resetForm() {
   document.getElementById('service-form').reset();
 
   // Clear all validation states
-  document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
-  document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('visible'));
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+  document.querySelectorAll('.error-msg').forEach(el => { el.style.display = 'none'; });
 
   // Reset service items to one default
   serviceItems = [createServiceItem()];
@@ -424,16 +452,22 @@ function buildPrintArea(b) {
     <tr>
       <td>${i + 1}. ${item.type}</td>
       <td>${getBtuLabel(item.btu)}</td>
-      <td style="text-align:center;">${item.qty}</td>
-      <td style="text-align:right;">${formatNumber(item.unitPrice)} บาท</td>
-      <td style="text-align:right;">${formatNumber(item.subtotal)} บาท</td>
+      <td>${item.qty}</td>
+      <td>${formatNumber(item.unitPrice)} บาท</td>
+      <td>${formatNumber(item.subtotal)} บาท</td>
     </tr>
   `).join('');
 
   return `
     <div class="print-header">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div class="print-company-icon">❄</div>
+      <div class="print-company-block">
+        <div class="print-company-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="10" rx="2"/>
+            <path d="M7 17v2m5-2v2m5-2v2"/>
+            <path d="M2 13h20"/>
+          </svg>
+        </div>
         <div>
           <div class="print-company-name">บริการแอร์ครบวงจร</div>
           <div class="print-company-sub">ล้าง • ซ่อม • ติดตั้ง แอร์ทุกยี่ห้อ</div>
@@ -477,7 +511,7 @@ function buildPrintArea(b) {
         ${rows}
         <tr>
           <td colspan="4">ค่าเดินทาง (${b.distanceLabel})</td>
-          <td style="text-align:right;">${formatNumber(b.distance)} บาท</td>
+          <td>${formatNumber(b.distance)} บาท</td>
         </tr>
         <tr class="print-total-row">
           <td colspan="4" style="text-align:left;">ยอดรวมทั้งหมด</td>
@@ -488,7 +522,9 @@ function buildPrintArea(b) {
 
     <div class="print-section-title">วันและเวลานัดหมาย</div>
     <div class="print-appointment">
-      <span style="font-size:22px;">📅</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
       <strong>${formatThaiDateTime(b.apptDate, b.apptTime)}</strong>
     </div>
 
@@ -515,7 +551,7 @@ function initEventListeners() {
     serviceItems.push(createServiceItem());
     renderServiceItems();
     // Scroll new item into view
-    const items = document.querySelectorAll('.service-item');
+    const items = document.querySelectorAll('#service-items-list > div');
     if (items.length) items[items.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
